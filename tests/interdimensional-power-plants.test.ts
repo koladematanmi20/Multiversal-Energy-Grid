@@ -28,13 +28,6 @@ describe('interdimensional-power-plants', () => {
     });
   });
   
-  describe('update-plant-output', () => {
-    it('should update the output of a power plant', () => {
-      const result = contract.updatePlantOutput(1, 6000);
-      expect(result.value).toBe(6000);
-    });
-  });
-  
   describe('update-operational-status', () => {
     it('should update the operational status of a power plant', () => {
       const result = contract.updateOperationalStatus(1, 'maintenance');

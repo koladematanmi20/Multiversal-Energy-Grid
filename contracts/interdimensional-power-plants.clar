@@ -1,4 +1,4 @@
-;; Interdimensional Power Plants Contract
+;; Cross-Universal Energy Transfers Contract
 
 ;; Constants
 (define-constant contract-owner tx-sender)
@@ -7,64 +7,45 @@
 (define-constant err-not-authorized (err u102))
 
 ;; Data Variables
-(define-data-var plant-counter uint u0)
-(define-map power-plants uint {
-    operator: principal,
-    universe-id: (string-ascii 50),
-    coordinates: (tuple (x int) (y int) (z int) (w int)),
-    energy-type: (string-ascii 20),
-    capacity: uint,
-    current-output: uint,
-    operational-status: (string-ascii 20)
+(define-data-var transfer-counter uint u0)
+(define-map energy-transfers uint {
+    source-universe: (string-ascii 50),
+    target-universe: (string-ascii 50),
+    energy-amount: uint,
+    timestamp: uint,
+    status: (string-ascii 20)
 })
 
 ;; Public Functions
-(define-public (register-power-plant (universe-id (string-ascii 50)) (coordinates (tuple (x int) (y int) (z int) (w int))) (energy-type (string-ascii 20)) (capacity uint))
+(define-public (initiate-energy-transfer (source-universe (string-ascii 50)) (target-universe (string-ascii 50)) (energy-amount uint))
     (let
         (
-            (plant-id (+ (var-get plant-counter) u1))
+            (transfer-id (+ (var-get transfer-counter) u1))
         )
-        (asserts! (> capacity u0) err-invalid-parameters)
-        (map-set power-plants plant-id {
-            operator: tx-sender,
-            universe-id: universe-id,
-            coordinates: coordinates,
-            energy-type: energy-type,
-            capacity: capacity,
-            current-output: u0,
-            operational-status: "active"
+        (asserts! (> energy-amount u0) err-invalid-parameters)
+        (asserts! (not (is-eq source-universe target-universe)) err-invalid-parameters)
+        (map-set energy-transfers transfer-id {
+            source-universe: source-universe,
+            target-universe: target-universe,
+            energy-amount: energy-amount,
+            timestamp: block-height,
+            status: "initiated"
         })
-        (var-set plant-counter plant-id)
-        (ok plant-id)
+        (var-set transfer-counter transfer-id)
+        (ok transfer-id)
     )
 )
 
-(define-public (update-plant-output (plant-id uint) (new-output uint))
+(define-public (complete-energy-transfer (transfer-id uint))
     (let
         (
-            (plant (unwrap! (map-get? power-plants plant-id) err-invalid-parameters))
+            (transfer (unwrap! (map-get? energy-transfers transfer-id) err-invalid-parameters))
         )
-        (asserts! (is-eq tx-sender (get operator plant)) err-not-authorized)
-        (asserts! (<= new-output (get capacity plant)) err-invalid-parameters)
-        (map-set power-plants plant-id
-            (merge plant {
-                current-output: new-output
-            })
-        )
-        (ok new-output)
-    )
-)
-
-(define-public (update-operational-status (plant-id uint) (new-status (string-ascii 20)))
-    (let
-        (
-            (plant (unwrap! (map-get? power-plants plant-id) err-invalid-parameters))
-        )
-        (asserts! (is-eq tx-sender (get operator plant)) err-not-authorized)
-        (asserts! (or (is-eq new-status "active") (is-eq new-status "inactive") (is-eq new-status "maintenance")) err-invalid-parameters)
-        (map-set power-plants plant-id
-            (merge plant {
-                operational-status: new-status
+        (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+        (asserts! (is-eq (get status transfer) "initiated") err-invalid-parameters)
+        (map-set energy-transfers transfer-id
+            (merge transfer {
+                status: "completed"
             })
         )
         (ok true)
@@ -72,10 +53,11 @@
 )
 
 ;; Read-only Functions
-(define-read-only (get-power-plant (plant-id uint))
-    (map-get? power-plants plant-id)
+(define-read-only (get-energy-transfer (transfer-id uint))
+    (map-get? energy-transfers transfer-id)
 )
 
-(define-read-only (get-plant-count)
-    (var-get plant-counter)
+(define-read-only (get-transfer-count)
+    (var-get transfer-counter)
 )
+

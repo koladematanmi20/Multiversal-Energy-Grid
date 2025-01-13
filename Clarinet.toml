@@ -5,6 +5,11 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
+[contracts.cross-universal-energy-transfers]
+path = 'contracts/cross-universal-energy-transfers.clar'
+clarity_version = 2
+epoch = 2.5
+
 [contracts.interdimensional-power-plants]
 path = 'contracts/interdimensional-power-plants.clar'
 clarity_version = 2
